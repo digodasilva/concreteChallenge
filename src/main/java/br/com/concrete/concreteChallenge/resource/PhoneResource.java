@@ -23,7 +23,7 @@ import br.com.concrete.concreteChallenge.service.PhoneService;
 public class PhoneResource {
 
 	@Autowired
-	PhoneService service;
+	private PhoneService service;
 
 	@GetMapping()
 	public ResponseEntity<List<Phone>> all() {
@@ -36,12 +36,12 @@ public class PhoneResource {
 	}
 	
 	@PostMapping()
-	public ResponseEntity<Phone> create(@RequestBody @Valid Phone phone) {
+	public ResponseEntity<Object> create(@RequestBody @Valid Phone phone) {
 		return service.create(phone);
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<Phone> update(@PathVariable String id,  @RequestBody Phone phone) {
+	public ResponseEntity<Object> update(@PathVariable String id,  @RequestBody Phone phone) {
 		return service.update(id, phone);
 	}
 	

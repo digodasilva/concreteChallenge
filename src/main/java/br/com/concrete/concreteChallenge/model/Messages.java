@@ -2,18 +2,18 @@ package br.com.concrete.concreteChallenge.model;
 
 public class Messages {
 	
-	private String message;
+	private String mensagem;
 	
-	public Messages(String message) {
-		this.message = message;
+	public Messages(String mensagem) {
+		this.mensagem = mensagem;
 	}
 
 	public String getMessage() {
-		return message;
+		return mensagem;
 	}
 
-	public void setMessage(String message) {
-		this.message = message;
+	public void setMessage(String mensagem) {
+		this.mensagem = mensagem;
 	}
 	
 }

@@ -2,6 +2,8 @@ package br.com.concrete.concreteChallenge.service;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
+import br.com.concrete.concreteChallenge.model.Login;
 import br.com.concrete.concreteChallenge.model.Messages;
 import br.com.concrete.concreteChallenge.model.Phone;
 import br.com.concrete.concreteChallenge.model.User;
@@ -21,6 +24,9 @@ public class UserService {
 
 	@Autowired
 	private UserRepository repository;
+	
+	@Autowired
+	private PhoneService phoneService;
 	
 	public ResponseEntity<List<User>> all() {
 		List<User> users = this.repository.findAll();
@@ -36,13 +42,13 @@ public class UserService {
 	@Transactional(rollbackFor = { SQLException.class })
 	public ResponseEntity<Object> create(User user) {
 		User createdUser = null;
-		if (validateEmail(user)) {
+		if (existsEmail(user)) {
 			Messages message = new Messages("E-mail já existente.");
 			return new ResponseEntity<Object>(message, HttpStatus.CONFLICT);
 		} else {
 			createdUser = this.repository.save(user);
 			List<Phone> phones = user.getPhones();
-			createOrUpdatePhones(phones, createdUser);
+			createPhones(phones, createdUser);
 		}
 		return new ResponseEntity<Object>(createdUser, 
 				createdUser == null ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
@@ -52,7 +58,7 @@ public class UserService {
 	@Transactional(rollbackFor = { SQLException.class })
 	public ResponseEntity<Object> update(String id, User user) {
 		User updatedUser = null;
-		if (validateEmail(user)) {
+		if (existsEmail(user)) {
 			Messages message = new Messages("E-mail já existente.");
 			return new ResponseEntity<Object>(message, HttpStatus.CONFLICT);
 		} else {
@@ -65,20 +71,24 @@ public class UserService {
 				updatedUser == null ? HttpStatus.BAD_REQUEST : HttpStatus.OK);
 	}
 	
-	private boolean validateEmail(User user) {
-		if (user.getEmail() != null)
-			return repository.findByEmail(user.getEmail());
-		return false;
+	private boolean existsEmail(User user) {
+		if (!Objects.isNull(user.getEmail())) {
+			Optional<User> foundEmail = repository.findByEmail(user.getEmail());
+			if (!Objects.isNull(user.getId()) && foundEmail.isPresent() && 
+					foundEmail.get().getId().equals(user.getId())) {
+				return false;
+			} else {
+				return foundEmail.isPresent();
+			}
+		}
+		return true;
 	}
 
-	public void createOrUpdatePhones(List<Phone> phones, User user) {
+	public void createPhones(List<Phone> phones, User user) {
 		if (!phones.isEmpty()) {
 			for (Phone phone : phones) {
 				phone.setUser(user);
-				if (phone.getId() == null)
-					new PhoneService().create(phone);
-				else
-					new PhoneService().update(phone.getId(), phone);
+				this.phoneService.create(phone);
 			}
 		}
 	}
@@ -90,5 +100,16 @@ public class UserService {
 			return new ResponseEntity<User>(HttpStatus.NOT_FOUND);
 		this.repository.deleteById(id);
 		return new ResponseEntity<User>(HttpStatus.OK);
+	}
+
+	public Object login(Login login) {
+		if (Objects.isNull(login)) {
+			return null;
+		}
+		Optional<User> loggingUser = this.repository.findByEmail(login.getEmail());
+		if (loggingUser.isPresent()) {
+			return (Object) loggingUser.get();
+		}
+		return null;
 	}
 }
