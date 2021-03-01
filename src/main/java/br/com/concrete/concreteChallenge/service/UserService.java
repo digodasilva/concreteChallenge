@@ -112,4 +112,10 @@ public class UserService {
 		}
 		return null;
 	}
+	
+	public User getByEmail(String email) {
+		Optional<User> user  = repository.findByEmail(email);
+		return user.get();
+		
+	}
 }
